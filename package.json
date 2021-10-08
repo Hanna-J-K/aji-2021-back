@@ -1,0 +1,30 @@
+{
+  "name": "back",
+  "version": "1.0.0",
+  "description": "Aplikacje w językach interpretowanych\r Projekt na 5\r backend",
+  "main": "index.js",
+  "scripts": {
+    "watch": "tsc -w",
+    "dev": "tsnd --respawn --transpile-only src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hanna-J-K/aji-2021-back.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Hanna-J-K/aji-2021-back/issues"
+  },
+  "homepage": "https://github.com/Hanna-J-K/aji-2021-back#readme",
+  "devDependencies": {
+    "@types/cors": "^2.8.12",
+    "@types/express": "^4.17.13",
+    "@types/express-session": "^1.17.4",
+    "@types/node": "^16.10.3",
+    "ts-node-dev": "^1.1.8",
+    "typescript": "^4.4.3"
+  }
+}
