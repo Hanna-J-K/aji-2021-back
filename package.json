@@ -14,7 +14,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/Hanna-J-K/aji-2021-back/issues"
   },
@@ -23,8 +23,19 @@
     "@types/cors": "^2.8.12",
     "@types/express": "^4.17.13",
     "@types/express-session": "^1.17.4",
-    "@types/node": "^16.10.3",
+    "@types/graphql": "^14.5.0",
+    "@types/node": "^16.11.7",
     "ts-node-dev": "^1.1.8",
-    "typescript": "^4.4.3"
+    "typescript": "^4.4.4"
+  },
+  "dependencies": {
+    "apollo-server-express": "^3.5.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "graphql": "15.3.0",
+    "pg": "^8.7.1",
+    "reflect-metadata": "^0.1.13",
+    "type-graphql": "^1.1.1",
+    "typeorm": "^0.2.40"
   }
 }
