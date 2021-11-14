@@ -32,8 +32,6 @@ const main = async () => {
    populateCategory()
    populateStatuses()
 
-   Product.create({name: 'chania', description: 'jeszcze lepiej', unitPrice: 15, unitWeight: 10}).save()
-
    await connection.runMigrations()
 
    const app = express()

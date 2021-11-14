@@ -1,32 +1,56 @@
-import { OrderStatus, ORDER_STATUS } from '../entities/OrderStatus'
-import { Arg, Mutation, Query, Resolver } from 'type-graphql'
+import { OrderStatus } from '../entities/OrderStatus'
+import { Arg, Field, InputType, Mutation, Query, Resolver } from 'type-graphql'
 import { Order } from '../entities/Order'
 import { getConnection } from 'typeorm'
 
+@InputType()
+class OrderInput {
+   @Field()
+   username: string
+   @Field()
+   email: string
+   @Field()
+   phone: string
+}
+
 @Resolver(Order)
 export class OrderResolver {
+   @Mutation(() => Order)
+   async createOrder(@Arg('input') input: OrderInput): Promise<Order> {
+      const status = await OrderStatus.findOne({
+         where: { orderStatus: 'not confirmed' },
+      })
+      const order = await Order.create({ ...input, status: status }).save()
+      return order
+   }
+
    @Query(() => [Order])
    async orders(): Promise<Order[]> {
-      return Order.find()
+      // WAZNE, ZEBY DODAC TE RELACJE!
+      const orders = await Order.find({ relations: ['status'] })
+      return orders
    }
 
    @Query(() => [Order], { nullable: true })
    userOrders(
       @Arg('username', () => String) username: string
    ): Promise<Order[] | undefined> {
-      return Order.find({ where: { username: username } })
+      return Order.find({
+         where: { username: username },
+         relations: ['status'],
+      })
    }
 
    @Query(() => [Order], { nullable: true })
    ordersByStatus(
       @Arg('status', () => String) status: string
    ): Promise<Order[] | undefined> {
-      return Order.find({ where: { status: status } })
+      return Order.find({ where: { status: status }, relations: ['status'] })
    }
 
    @Query(() => Order, { nullable: true })
    order(@Arg('id', () => String) id: string): Promise<Order | undefined> {
-      return Order.findOne({ id })
+      return Order.findOne({ where: { id }, relations: ['status'] })
    }
 
    @Query(() => [OrderStatus])

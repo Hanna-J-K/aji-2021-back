@@ -4,6 +4,7 @@ import {
    Column,
    CreateDateColumn,
    Entity,
+   JoinColumn,
    ManyToOne,
    OneToMany,
    PrimaryGeneratedColumn,
@@ -34,8 +35,8 @@ export class Order extends BaseEntity {
    @Column()
    phone!: string
 
-   @Field(() => String)
-   @ManyToOne(() => OrderStatus, (status) => status.orderStatus)
+   @Field(() => OrderStatus)
+   @ManyToOne(() => OrderStatus)
    status: OrderStatus
 
    @OneToMany(() => OrderedProduct, (orderedProducts) => orderedProducts.order)

@@ -1,5 +1,6 @@
-import { Field, ObjectType } from "type-graphql";
-import {BaseEntity, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Field, ObjectType } from 'type-graphql'
+import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
+import { Order } from './Order'
 
 export enum ORDER_STATUS {
    NOT_CONFIRMED = 'not confirmed',
@@ -11,14 +12,14 @@ export enum ORDER_STATUS {
 @Entity()
 export class OrderStatus extends BaseEntity {
    @PrimaryGeneratedColumn()
-   id!: number;
+   id!: number
 
-   @Field()
+   @Field(() => String)
    @Column({
       unique: true,
-      type: "enum",
+      type: 'enum',
       enum: ORDER_STATUS,
-      default: ORDER_STATUS.NOT_CONFIRMED
+      default: ORDER_STATUS.NOT_CONFIRMED,
    })
    orderStatus: string
 }
