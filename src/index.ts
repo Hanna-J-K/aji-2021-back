@@ -12,6 +12,8 @@ import { OrderedProduct } from './entities/OrderedProduct'
 import { OrderStatus } from './entities/OrderStatus'
 import { Product } from './entities/Product'
 import { ProductResolver } from './resolvers/product'
+import { CategoryResolver } from './resolvers/category'
+import populateCategory from './utils/populateCategories'
 
 const main = async () => {
    const connection = await createConnection({
@@ -23,9 +25,10 @@ const main = async () => {
       synchronize: true,
       migrations: [path.join(__dirname, './migrations/*')],
       entities: [Category, Order, OrderedProduct, OrderStatus, Product],
+      dropSchema: true
    })
 
-   //const category = Category.findOne('ingredients')
+   populateCategory()
 
    Product.create({name: 'chania', description: 'jeszcze lepiej', unitPrice: 15, unitWeight: 10}).save()
 
@@ -43,7 +46,7 @@ const main = async () => {
 
    const apolloServer = new ApolloServer({
       schema: await buildSchema({
-         resolvers: [HelloResolver, ProductResolver],
+         resolvers: [HelloResolver, ProductResolver, CategoryResolver],
          validate: false,
       }),
       context: ({ req, res }: any) => ({

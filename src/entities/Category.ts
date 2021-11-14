@@ -1,5 +1,5 @@
 import { Field, ObjectType } from 'type-graphql'
-import { BaseEntity, Entity, ManyToMany, Column, PrimaryColumn } from 'typeorm'
+import { BaseEntity, Entity, ManyToMany, Column, PrimaryGeneratedColumn } from 'typeorm'
 import { Product } from './Product'
 
 export enum CATEGORIES {
@@ -16,15 +16,17 @@ export enum CATEGORIES {
 @Entity()
 export class Category extends BaseEntity {
    @Field()
-   @PrimaryColumn({ unique: true })
-   name!: string
+   @PrimaryGeneratedColumn()
+   id!: number
 
+   @Field()
    @Column({
+      unique: true,
       type: 'enum',
       enum: CATEGORIES,
       default: CATEGORIES.INGREDIENTS,
    })
-   categories: CATEGORIES
+   name: string
 
    @ManyToMany(() => Product, (product) => product.categories)
    products: Product[]
