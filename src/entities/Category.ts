@@ -15,7 +15,6 @@ export enum CATEGORIES {
 @ObjectType()
 @Entity()
 export class Category extends BaseEntity {
-   @Field()
    @PrimaryGeneratedColumn()
    id!: number
 

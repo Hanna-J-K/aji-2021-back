@@ -5,7 +5,6 @@ import cors from 'cors'
 import { ApolloServer } from 'apollo-server-express'
 import { createConnection } from 'typeorm'
 import { buildSchema } from 'type-graphql'
-import { HelloResolver } from './resolvers/hello'
 import { Category } from './entities/Category'
 import { Order } from './entities/Order'
 import { OrderedProduct } from './entities/OrderedProduct'
@@ -14,6 +13,8 @@ import { Product } from './entities/Product'
 import { ProductResolver } from './resolvers/product'
 import { CategoryResolver } from './resolvers/category'
 import populateCategory from './utils/populateCategories'
+import { OrderResolver } from './resolvers/order'
+import populateStatuses from './utils/populateStatuses'
 
 const main = async () => {
    const connection = await createConnection({
@@ -29,6 +30,7 @@ const main = async () => {
    })
 
    populateCategory()
+   populateStatuses()
 
    Product.create({name: 'chania', description: 'jeszcze lepiej', unitPrice: 15, unitWeight: 10}).save()
 
@@ -46,7 +48,7 @@ const main = async () => {
 
    const apolloServer = new ApolloServer({
       schema: await buildSchema({
-         resolvers: [HelloResolver, ProductResolver, CategoryResolver],
+         resolvers: [ProductResolver, CategoryResolver, OrderResolver],
          validate: false,
       }),
       context: ({ req, res }: any) => ({
