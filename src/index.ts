@@ -6,20 +6,30 @@ import { ApolloServer } from 'apollo-server-express'
 import { createConnection } from 'typeorm'
 import { buildSchema } from 'type-graphql'
 import { HelloResolver } from './resolvers/hello'
+import { Category } from './entities/Category'
+import { Order } from './entities/Order'
+import { OrderedProduct } from './entities/OrderedProduct'
+import { OrderStatus } from './entities/OrderStatus'
+import { Product } from './entities/Product'
+import { ProductResolver } from './resolvers/product'
 
 const main = async () => {
-   // const connection = await createConnection({
-   //    type: 'postgres',
-   //    database: 'aji-db',
-   //    username: 'postgres',
-   //    password: 'postgres',
-   //    logging: true,
-   //    synchronize: true,
-   //    migrations: [path.join(__dirname, './migrations/*')],
-   //    entities: [],
-   // })
+   const connection = await createConnection({
+      type: 'postgres',
+      database: 'aji-db',
+      username: 'postgres',
+      password: 'postgres',
+      logging: true,
+      synchronize: true,
+      migrations: [path.join(__dirname, './migrations/*')],
+      entities: [Category, Order, OrderedProduct, OrderStatus, Product],
+   })
 
-   // await connection.runMigrations()
+   //const category = Category.findOne('ingredients')
+
+   Product.create({name: 'chania', description: 'jeszcze lepiej', unitPrice: 15, unitWeight: 10}).save()
+
+   await connection.runMigrations()
 
    const app = express()
 
@@ -33,7 +43,7 @@ const main = async () => {
 
    const apolloServer = new ApolloServer({
       schema: await buildSchema({
-         resolvers: [HelloResolver],
+         resolvers: [HelloResolver, ProductResolver],
          validate: false,
       }),
       context: ({ req, res }: any) => ({
@@ -51,6 +61,7 @@ const main = async () => {
    app.listen(4000, () => {
       console.log('server started on localhost:4000')
    })
+
 }
 
 main()
