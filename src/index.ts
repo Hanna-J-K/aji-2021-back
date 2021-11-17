@@ -23,7 +23,7 @@ const main = async () => {
       username: 'postgres',
       password: 'postgres',
       logging: true,
-      synchronize: true,
+      //synchronize: true,
       migrations: [path.join(__dirname, './migrations/*')],
       entities: [Category, Order, OrderedProduct, OrderStatus, Product],
       //dropSchema: true

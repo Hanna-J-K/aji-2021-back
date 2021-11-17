@@ -8,22 +8,24 @@ import {
    Query,
    Resolver,
 } from 'type-graphql'
-import { IsEmail, Length, validate } from 'class-validator'
+import { IsEmail, IsMobilePhone, Length, validate } from 'class-validator'
 import { Order } from '../entities/Order'
 import { getConnection } from 'typeorm'
-import orderResponseMap from '../utils/orderResponseMap'
+import orderResponseMap from '../utils/validationResponseMap'
 
 @InputType()
 class OrderInput {
    @Field()
    @Length(1, 255)
    username: string
+
    @Field()
    @IsEmail()
    @Length(1, 255)
    email: string
+
    @Field()
-   @Length(9, 10)
+   @IsMobilePhone('en-US')
    phone: string
 }
 
@@ -32,7 +34,7 @@ export class FieldError {
    @Field()
    field: string
    @Field(() => [String])
-   message: (string | undefined)[]
+   message: (string | undefined)[] | string
 }
 
 @ObjectType()
@@ -92,36 +94,65 @@ export class OrderResolver {
       return OrderStatus.find()
    }
 
-   @Mutation(() => Order)
+   @Mutation(() => OrderResponse)
    async updateOrder(
       @Arg('id', () => String) id: string,
       @Arg('status', () => String) status: OrderStatus
-   ): Promise<Order | null> {
-      const order = await Order.findOne(id)
+   ): Promise<OrderResponse> {
+      const order = await Order.findOne(id, { relations: ['status'] })
+      const errorArray: FieldError[] = []
+      if (!order) {
+         errorArray.push({
+            field: 'id',
+            message: ['order with provided id doesnt exists'],
+         })
+         return { errors: errorArray }
+      }
+      const newStatus = await OrderStatus.findOne(status)
       const currentStatus = order?.status.orderStatus
-      if (currentStatus === ('canceled' || 'completed')) {
-         return null
+      if (currentStatus === newStatus?.orderStatus) {
+         errorArray.push({
+            field: 'orderStatus',
+            message: ['cannot change order status to old order status'],
+         })
+         return { errors: errorArray }
+      } else if (
+         currentStatus === 'canceled' ||
+         currentStatus === 'completed'
+      ) {
+         errorArray.push({
+            field: 'orderStatus',
+            message: ['cannot change canceled or completed status'],
+         })
+         return { errors: errorArray }
       } else if (
          currentStatus === 'confirmed' &&
-         status.orderStatus === 'not confirmed'
+         newStatus?.orderStatus === 'not confirmed'
       ) {
-         return null
+         errorArray.push({
+            field: 'orderStatus',
+            message: ['cannot revert confirmed status'],
+         })
+         return { errors: errorArray }
       } else if (
          currentStatus === 'not confirmed' &&
-         status.orderStatus !== 'confirmed'
+         newStatus?.orderStatus !== 'confirmed'
       ) {
-         return null
+         errorArray.push({
+            field: 'orderStatus',
+            message: [
+               'cannot change state of not confirmed status to other than confirmed',
+            ],
+         })
+         return { errors: errorArray }
       } else {
-         const result = await getConnection()
+         await getConnection()
             .createQueryBuilder()
-            .update(Order)
-            .set({ status: status })
-            .where('id = :id', {
-               id,
-            })
-            .returning('*')
-            .execute()
-         return result.raw[0]
+            .relation(Order, 'status')
+            .of(order)
+            .set(status)
+         const newOrder = await Order.findOne(id, { relations: ['status'] })
+         return { errors: undefined, order: newOrder }
       }
    }
 }

@@ -5,24 +5,44 @@ import {
    InputType,
    Int,
    Mutation,
+   ObjectType,
    Query,
    Resolver,
 } from 'type-graphql'
-import { Category } from 'src/entities/Category'
+import { Category } from '../entities/Category'
 import { getConnection } from 'typeorm'
+import { IsPositive, Length, validate } from 'class-validator'
+import { FieldError } from './order'
+import validationResponseMap from '../utils/validationResponseMap'
 
 @InputType()
 class ProductInput {
+   @Length(1, 255)
    @Field({ nullable: true })
    name?: string
+
+   @Length(1, 255)
    @Field({ nullable: true })
    description?: string
+
+   @IsPositive()
    @Field({ nullable: true })
    unitPrice?: number
+
+   @IsPositive()
    @Field({ nullable: true })
    unitWeight?: number
+
    @Field(() => String, { nullable: true })
    categories?: Category[]
+}
+
+@ObjectType()
+class ProductResponse {
+   @Field(() => [FieldError], { nullable: true })
+   errors?: FieldError[]
+   @Field(() => Product, { nullable: true })
+   product?: Product
 }
 
 @Resolver(Product)
@@ -37,25 +57,46 @@ export class ProductResolver {
       return Product.findOne(id)
    }
 
-   @Mutation(() => Product)
-   async createProduct(@Arg('input') input: ProductInput): Promise<Product> {
-      return Product.create({ ...input }).save()
+   @Mutation(() => ProductResponse)
+   async createProduct(
+      @Arg('input') input: ProductInput
+   ): Promise<ProductResponse> {
+      const errors = await validate(input)
+      if (errors.length === 0) {
+         const product = await Product.create({ ...input }).save()
+         return { product: product }
+      }
+      return { errors: validationResponseMap(errors) }
    }
 
-   @Mutation(() => Product)
+   @Mutation(() => ProductResponse)
    async updateProduct(
       @Arg('id', () => Int) id: number,
       @Arg('input') input: ProductInput
-   ): Promise<Product | null> {
-      const result = await getConnection()
-         .createQueryBuilder()
-         .update(Product)
-         .set({ ...input })
-         .where('id = :id', {
-            id,
+   ): Promise<ProductResponse> {
+      const product = await Product.findOne(id)
+      const errorArray: FieldError[] = []
+      if (!product) {
+         errorArray.push({
+            field: 'id',
+            message: ['product with provided id doesnt exists'],
          })
-         .returning('*')
-         .execute()
-      return result.raw[0]
+         return { errors: errorArray }
+      } else {
+         const errors = await validate(input)
+         if (errors.length === 0) {
+            const result = await getConnection()
+               .createQueryBuilder()
+               .update(Product)
+               .set({ ...input })
+               .where('id = :id', {
+                  id,
+               })
+               .returning('*')
+               .execute()
+            return { product: result.raw[0] }
+         }
+         return { errors: validationResponseMap(errors) }
+      }
    }
 }
