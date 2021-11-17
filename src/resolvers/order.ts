@@ -1,27 +1,61 @@
 import { OrderStatus } from '../entities/OrderStatus'
-import { Arg, Field, InputType, Mutation, Query, Resolver } from 'type-graphql'
+import {
+   Arg,
+   Field,
+   InputType,
+   Mutation,
+   ObjectType,
+   Query,
+   Resolver,
+} from 'type-graphql'
+import { IsEmail, Length, validate } from 'class-validator'
 import { Order } from '../entities/Order'
 import { getConnection } from 'typeorm'
+import orderResponseMap from '../utils/orderResponseMap'
 
 @InputType()
 class OrderInput {
    @Field()
+   @Length(1, 255)
    username: string
    @Field()
+   @IsEmail()
+   @Length(1, 255)
    email: string
    @Field()
+   @Length(9, 10)
    phone: string
+}
+
+@ObjectType()
+export class FieldError {
+   @Field()
+   field: string
+   @Field(() => [String])
+   message: (string | undefined)[]
+}
+
+@ObjectType()
+class OrderResponse {
+   @Field(() => [FieldError], { nullable: true })
+   errors?: FieldError[]
+   @Field(() => Order, { nullable: true })
+   order?: Order
 }
 
 @Resolver(Order)
 export class OrderResolver {
-   @Mutation(() => Order)
-   async createOrder(@Arg('input') input: OrderInput): Promise<Order> {
-      const status = await OrderStatus.findOne({
-         where: { orderStatus: 'not confirmed' },
-      })
-      const order = await Order.create({ ...input, status: status }).save()
-      return order
+   @Mutation(() => OrderResponse)
+   async createOrder(@Arg('input') input: OrderInput): Promise<OrderResponse> {
+      const errors = await validate(input)
+      if (errors.length === 0) {
+         const status = await OrderStatus.findOne({
+            where: { orderStatus: 'not confirmed' },
+         })
+         const order = await Order.create({ ...input, status: status }).save()
+         return { errors: undefined, order: order }
+      }
+      return { errors: orderResponseMap(errors) }
    }
 
    @Query(() => [Order])

@@ -5,10 +5,10 @@ import cors from 'cors'
 import { ApolloServer } from 'apollo-server-express'
 import { createConnection } from 'typeorm'
 import { buildSchema } from 'type-graphql'
-import { Category } from './entities/Category'
+import { CATEGORIES, Category } from './entities/Category'
 import { Order } from './entities/Order'
 import { OrderedProduct } from './entities/OrderedProduct'
-import { OrderStatus } from './entities/OrderStatus'
+import { OrderStatus, ORDER_STATUS } from './entities/OrderStatus'
 import { Product } from './entities/Product'
 import { ProductResolver } from './resolvers/product'
 import { CategoryResolver } from './resolvers/category'
@@ -26,14 +26,19 @@ const main = async () => {
       synchronize: true,
       migrations: [path.join(__dirname, './migrations/*')],
       entities: [Category, Order, OrderedProduct, OrderStatus, Product],
-      dropSchema: true
+      //dropSchema: true
    })
 
-   populateCategory()
-   populateStatuses()
+   let categoriesCount = await connection.getRepository(Category).count()
+   let orderStatusCount = await connection.getRepository(OrderStatus).count()
+   if (categoriesCount !== Object.keys(CATEGORIES).length) {
+      populateCategory()
+   }
+   if (orderStatusCount !== Object.keys(ORDER_STATUS).length) {
+      populateStatuses()
+   }
 
    await connection.runMigrations()
-
    const app = express()
 
    // app.set('trust proxy', 1)
@@ -64,7 +69,6 @@ const main = async () => {
    app.listen(4000, () => {
       console.log('server started on localhost:4000')
    })
-
 }
 
 main()
