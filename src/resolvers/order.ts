@@ -88,7 +88,7 @@ export class OrderResolver {
             relations: ['status', 'orderedProducts'],
          })
          console.log(orderWithProducts?.orderedProducts)
-         return { errors: undefined, order: orderWithProducts }
+         return { order: orderWithProducts }
       }
       return { errors: orderResponseMap(errors) }
    }
@@ -192,10 +192,10 @@ export class OrderResolver {
                .where('id = :id', { id })
                .returning('*')
                .execute()
-            return { errors: undefined, order: result.raw[0] }
+            return { order: result.raw[0] }
          }
          const updatedOrder = await Order.findOne(id, { relations: ['status'] })
-         return { errors: undefined, order: updatedOrder }
+         return { order: updatedOrder }
       }
    }
 }

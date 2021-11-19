@@ -49,12 +49,13 @@ class ProductResponse {
 export class ProductResolver {
    @Query(() => [Product])
    async products(): Promise<Product[]> {
-      return Product.find()
+      const products = await Product.find({ relations: ['categories'] })
+      return products
    }
 
    @Query(() => Product, { nullable: true })
    product(@Arg('id', () => Int) id: number): Promise<Product | undefined> {
-      return Product.findOne(id)
+      return Product.findOne(id, { relations: ['categories'] })
    }
 
    @Mutation(() => ProductResponse)
@@ -63,7 +64,10 @@ export class ProductResolver {
    ): Promise<ProductResponse> {
       const errors = await validate(input)
       if (errors.length === 0) {
-         const product = await Product.create({ ...input }).save()
+         const productId = await (await Product.create({ ...input }).save()).id
+         const product = await Product.findOne(productId, {
+            relations: ['categories'],
+         })
          return { product: product }
       }
       return { errors: validationResponseMap(errors) }

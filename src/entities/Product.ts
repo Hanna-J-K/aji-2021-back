@@ -1,5 +1,12 @@
 import { Field, ObjectType } from 'type-graphql'
-import { BaseEntity, Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from 'typeorm'
+import {
+   BaseEntity,
+   Column,
+   Entity,
+   JoinTable,
+   ManyToMany,
+   PrimaryGeneratedColumn,
+} from 'typeorm'
 import { Category } from './Category'
 
 @ObjectType()
@@ -25,7 +32,10 @@ export class Product extends BaseEntity {
    @Column({ type: 'float' })
    unitWeight!: number
 
-   @ManyToMany(() => Category, (category) => category.products)
+   @Field(() => [Category])
+   @ManyToMany(() => Category, (category) => category.products, {
+      cascade: ["insert", "update"],
+   })
    @JoinTable()
    categories: Category[]
 }

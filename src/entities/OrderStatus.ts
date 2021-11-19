@@ -1,6 +1,6 @@
 import { Field, ObjectType } from 'type-graphql'
-import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
-import { Order } from './Order'
+import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
+
 
 export enum ORDER_STATUS {
    NOT_CONFIRMED = 'not confirmed',
