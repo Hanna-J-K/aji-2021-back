@@ -4,7 +4,6 @@ import {
    Column,
    CreateDateColumn,
    Entity,
-   JoinColumn,
    ManyToOne,
    OneToMany,
    PrimaryGeneratedColumn,
@@ -19,8 +18,12 @@ export class Order extends BaseEntity {
    @PrimaryGeneratedColumn('uuid')
    id!: string
 
-   @Field(() => String, { nullable: true })
+   @Field(() => String)
    @CreateDateColumn()
+   orderPlaceDate: Date
+
+   @Field(() => String, { nullable: true })
+   @Column({ nullable: true })
    orderConfirmedDate: Date
 
    @Field()
@@ -28,7 +31,7 @@ export class Order extends BaseEntity {
    username!: string
 
    @Field()
-   @Column({unique: true})
+   @Column({ unique: true })
    email!: string
 
    @Field()
@@ -39,6 +42,7 @@ export class Order extends BaseEntity {
    @ManyToOne(() => OrderStatus)
    status: OrderStatus
 
+   @Field(() => [OrderedProduct])
    @OneToMany(() => OrderedProduct, (orderedProducts) => orderedProducts.order)
    orderedProducts: OrderedProduct[]
 }

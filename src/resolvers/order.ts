@@ -8,10 +8,32 @@ import {
    Query,
    Resolver,
 } from 'type-graphql'
-import { IsEmail, IsMobilePhone, Length, validate } from 'class-validator'
+import {
+   ArrayNotEmpty,
+   IsEmail,
+   IsInt,
+   IsMobilePhone,
+   IsPositive,
+   Length,
+   validate,
+} from 'class-validator'
 import { Order } from '../entities/Order'
 import { getConnection } from 'typeorm'
 import orderResponseMap from '../utils/validationResponseMap'
+import createOrderedProducts from '../utils/createOrderedProducts'
+
+@InputType()
+export class OrderedProductInput {
+   @Field()
+   @IsInt()
+   @IsPositive()
+   quantity!: number
+
+   @Field()
+   @IsInt()
+   @IsPositive()
+   product_id!: number
+}
 
 @InputType()
 class OrderInput {
@@ -27,6 +49,10 @@ class OrderInput {
    @Field()
    @IsMobilePhone('en-US')
    phone: string
+
+   @Field(() => [OrderedProductInput], { nullable: true })
+   @ArrayNotEmpty()
+   orderedProducts?: OrderedProductInput[]
 }
 
 @ObjectType()
@@ -55,7 +81,14 @@ export class OrderResolver {
             where: { orderStatus: 'not confirmed' },
          })
          const order = await Order.create({ ...input, status: status }).save()
-         return { errors: undefined, order: order }
+         await createOrderedProducts(
+            input.orderedProducts!, order.id
+         )
+         const orderWithProducts = await Order.findOne(order.id, {
+            relations: ['status', 'orderedProducts'],
+         })
+         console.log(orderWithProducts?.orderedProducts)
+         return { errors: undefined, order: orderWithProducts }
       }
       return { errors: orderResponseMap(errors) }
    }
@@ -86,7 +119,7 @@ export class OrderResolver {
 
    @Query(() => Order, { nullable: true })
    order(@Arg('id', () => String) id: string): Promise<Order | undefined> {
-      return Order.findOne({ where: { id }, relations: ['status'] })
+      return Order.findOne({ where: { id }, relations: ['status', 'orderedProducts'] })
    }
 
    @Query(() => [OrderStatus])
@@ -151,8 +184,18 @@ export class OrderResolver {
             .relation(Order, 'status')
             .of(order)
             .set(status)
-         const newOrder = await Order.findOne(id, { relations: ['status'] })
-         return { errors: undefined, order: newOrder }
+         if (newStatus?.orderStatus === 'confirmed') {
+            const result = await getConnection()
+               .createQueryBuilder()
+               .update(Order)
+               .set({ orderConfirmedDate: Date.now() })
+               .where('id = :id', { id })
+               .returning('*')
+               .execute()
+            return { errors: undefined, order: result.raw[0] }
+         }
+         const updatedOrder = await Order.findOne(id, { relations: ['status'] })
+         return { errors: undefined, order: updatedOrder }
       }
    }
 }

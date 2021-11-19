@@ -1,21 +1,19 @@
+import { Field, ObjectType } from 'type-graphql'
 import { BaseEntity, Column, Entity, ManyToOne, PrimaryColumn } from 'typeorm'
 import { Order } from './Order'
-import { Product } from './Product'
 
+@ObjectType()
 @Entity()
 export class OrderedProduct extends BaseEntity {
+   @Field()
    @Column({ type: 'int' })
-   quantity: number
+   quantity!: number
 
+   @Field()
    @PrimaryColumn()
-   product_id: number
+   product_id!: number
 
+   @ManyToOne(() => Order, (order) => order.id)
    @PrimaryColumn()
-   order_id: string
-
-   @ManyToOne(() => Product)
-   product: Product
-
-   @ManyToOne(() => Order, (order) => order.orderedProducts)
-   order: Order
+   order!: string
 }
