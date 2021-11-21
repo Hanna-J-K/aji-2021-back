@@ -45,12 +45,52 @@ class ProductResponse {
    product?: Product
 }
 
+@ObjectType()
+class PaginatedProducts {
+   @Field(() => [Product])
+   products: Product[]
+   @Field()
+   hasMore: boolean
+}
+
 @Resolver(Product)
 export class ProductResolver {
-   @Query(() => [Product])
-   async products(): Promise<Product[]> {
-      const products = await Product.find({ relations: ['categories'] })
-      return products
+   @Query(() => PaginatedProducts)
+   async products(
+      @Arg('limit', () => Int) limit: number,
+      @Arg('cursor', () => Int, { nullable: true }) cursor: number | null
+   ): Promise<PaginatedProducts> {
+      const realLimit = Math.min(30, limit)
+      if (cursor) {
+         const products = await getConnection()
+            .createQueryBuilder()
+            .select('product')
+            .from(Product, 'product')
+            .leftJoinAndSelect('product.categories', 'category')
+            .where('product.id > :id', {
+               id: cursor,
+            })
+            .orderBy('product.id', 'ASC')
+            .take(limit + 1)
+            .getMany()
+         return {
+            products: products.slice(0, realLimit),
+            hasMore: products.length === realLimit + 1,
+         }
+      } else {
+         const products = await getConnection()
+            .createQueryBuilder()
+            .select('product')
+            .from(Product, 'product')
+            .leftJoinAndSelect('product.categories', 'category')
+            .orderBy('product.id', 'ASC')
+            .take(limit + 1)
+            .getMany()
+         return {
+            products: products.slice(0, realLimit),
+            hasMore: products.length === realLimit + 1,
+         }
+      }
    }
 
    @Query(() => Product, { nullable: true })
