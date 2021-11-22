@@ -10,7 +10,7 @@ import {
    Resolver,
 } from 'type-graphql'
 import { Category } from '../entities/Category'
-import { getConnection } from 'typeorm'
+import { getConnection, getRepository, ILike, MoreThan } from 'typeorm'
 import { IsPositive, Length, validate } from 'class-validator'
 import { FieldError } from './order'
 import validationResponseMap from '../utils/validationResponseMap'
@@ -58,38 +58,30 @@ export class ProductResolver {
    @Query(() => PaginatedProducts)
    async products(
       @Arg('limit', () => Int) limit: number,
-      @Arg('cursor', () => Int, { nullable: true }) cursor: number | null
+      @Arg('cursor', () => Int, { nullable: true }) cursor: number | null,
+      @Arg('phrase', () => String, { nullable: true }) phrase: string | null
    ): Promise<PaginatedProducts> {
+      if (phrase === null) {
+         phrase = ''
+      }
+      if (cursor === null) {
+         cursor = 0
+      }
       const realLimit = Math.min(30, limit)
-      if (cursor) {
-         const products = await getConnection()
-            .createQueryBuilder()
-            .select('product')
-            .from(Product, 'product')
-            .leftJoinAndSelect('product.categories', 'category')
-            .where('product.id > :id', {
-               id: cursor,
-            })
-            .orderBy('product.id', 'ASC')
-            .take(limit + 1)
-            .getMany()
-         return {
-            products: products.slice(0, realLimit),
-            hasMore: products.length === realLimit + 1,
-         }
-      } else {
-         const products = await getConnection()
-            .createQueryBuilder()
-            .select('product')
-            .from(Product, 'product')
-            .leftJoinAndSelect('product.categories', 'category')
-            .orderBy('product.id', 'ASC')
-            .take(limit + 1)
-            .getMany()
-         return {
-            products: products.slice(0, realLimit),
-            hasMore: products.length === realLimit + 1,
-         }
+      const products = await getRepository(Product).find({
+         relations: ['categories'],
+         where: {
+            id: MoreThan(cursor),
+            name: ILike(`%${phrase}%`),
+         },
+         order: {
+            id: 'ASC',
+         },
+         take: limit + 1,
+      })
+      return {
+         products: products.slice(0, realLimit),
+         hasMore: products.length === realLimit + 1,
       }
    }
 
@@ -104,7 +96,7 @@ export class ProductResolver {
    ): Promise<ProductResponse> {
       const errors = await validate(input)
       if (errors.length === 0) {
-         const productId = await (await Product.create({ ...input }).save()).id
+         const productId = (await Product.create({ ...input }).save()).id
          const product = await Product.findOne(productId, {
             relations: ['categories'],
          })
