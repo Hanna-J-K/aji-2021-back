@@ -58,14 +58,11 @@ export class ProductResolver {
    @Query(() => PaginatedProducts)
    async products(
       @Arg('limit', () => Int) limit: number,
-      @Arg('cursor', () => Int, { nullable: true }) cursor: number | null,
+      @Arg('cursor', () => Int) cursor: number,
       @Arg('phrase', () => String, { nullable: true }) phrase: string | null
    ): Promise<PaginatedProducts> {
       if (phrase === null) {
          phrase = ''
-      }
-      if (cursor === null) {
-         cursor = 0
       }
       const realLimit = Math.min(30, limit)
       const products = await getRepository(Product).find({
@@ -73,9 +70,6 @@ export class ProductResolver {
          where: {
             id: MoreThan(cursor),
             name: ILike(`%${phrase}%`),
-         },
-         order: {
-            id: 'ASC',
          },
          take: limit + 1,
       })
