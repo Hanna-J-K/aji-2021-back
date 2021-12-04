@@ -31,7 +31,7 @@ export class Order extends BaseEntity {
    username!: string
 
    @Field()
-   @Column({ unique: true })
+   @Column()
    email!: string
 
    @Field()

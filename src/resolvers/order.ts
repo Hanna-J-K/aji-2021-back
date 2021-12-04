@@ -47,7 +47,7 @@ class OrderInput {
    email: string
 
    @Field()
-   @IsMobilePhone('en-US')
+   @IsMobilePhone('pl-PL')
    phone: string
 
    @Field(() => [OrderedProductInput], { nullable: true })
@@ -76,6 +76,7 @@ export class OrderResolver {
    @Mutation(() => OrderResponse)
    async createOrder(@Arg('input') input: OrderInput): Promise<OrderResponse> {
       const errors = await validate(input)
+      console.log(errors)
       if (errors.length === 0) {
          const status = await OrderStatus.findOne({
             where: { orderStatus: 'not confirmed' },

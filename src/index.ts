@@ -41,13 +41,12 @@ const main = async () => {
    await connection.runMigrations()
    const app = express()
 
-   // app.set('trust proxy', 1)
-   // app.use(
-   //    cors({
-   //       origin: 'http://localhost:3000',
-   //       credentials: true,
-   //    })
-   // )
+   app.use(
+      cors({
+         origin: ['http://localhost:3000', 'https://studio.apollographql.com'],
+         credentials: true,
+      }),
+   )
 
    const apolloServer = new ApolloServer({
       schema: await buildSchema({
@@ -63,7 +62,7 @@ const main = async () => {
 
    apolloServer.applyMiddleware({
       app,
-      // cors: false,
+      cors: false,
    })
 
    app.listen(4000, () => {
