@@ -1,8 +1,15 @@
 import { MyContext } from '../types'
-import { Arg, Ctx, Field, Mutation, ObjectType, Query, Resolver } from 'type-graphql'
+import {
+   Arg,
+   Ctx,
+   Field,
+   Mutation,
+   ObjectType,
+   Query,
+   Resolver,
+} from 'type-graphql'
 import { Admin } from '../entities/Admin'
 import argon2 from 'argon2'
-
 
 @ObjectType()
 class AdminResponse {
@@ -15,7 +22,7 @@ class AdminResponse {
 @Resolver(Admin)
 export class AdminResolver {
    @Query(() => Admin, { nullable: true })
-   me(@Ctx() { req }: MyContext) {
+   async me(@Ctx() { req }: MyContext) {
       if (!req.session.adminId) {
          return null
       }
@@ -28,7 +35,7 @@ export class AdminResolver {
       @Arg('password') password: string,
       @Ctx() { req }: MyContext
    ): Promise<AdminResponse> {
-      const admin = await Admin.findOne({where: { username }})
+      const admin = await Admin.findOne({ where: { username } })
       if (!admin) {
          return { error: true }
       }
