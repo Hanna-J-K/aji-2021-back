@@ -122,10 +122,14 @@ export class OrderResolver {
    }
 
    @Query(() => [Order], { nullable: true })
-   ordersByStatus(
+   async ordersByStatus(
       @Arg('status', () => String) status: string
    ): Promise<Order[] | undefined> {
-      return Order.find({ where: { status: status }, relations: ['status'] })
+      const orders = await Order.find({
+         where: { status: status },
+         relations: ['status', 'orderedProducts'],
+      })
+      return orders
    }
 
    @Query(() => Order, { nullable: true })
