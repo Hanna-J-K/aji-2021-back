@@ -93,7 +93,9 @@ export class ProductResolver {
          const category = await Category.find({
             where: { name: input.categories },
          })
-         const productId = (await Product.create({ ...input, categories: category}).save()).id
+         const productId = (
+            await Product.create({ ...input, categories: category }).save()
+         ).id
          const product = await Product.findOne(productId, {
             relations: ['categories'],
          })
@@ -118,16 +120,25 @@ export class ProductResolver {
       } else {
          const errors = await validate(input)
          if (errors.length === 0) {
+            const category = await Category.find({
+               where: { name: input.categories },
+            })
             const result = await getConnection()
                .createQueryBuilder()
                .update(Product)
-               .set({ ...input })
+               .set({ name: input.name, description: input.description, unitWeight: input.unitWeight, unitPrice: input.unitPrice})
                .where('id = :id', {
                   id,
                })
                .returning('*')
                .execute()
-            return { product: result.raw[0] }
+            await getConnection()
+               .createQueryBuilder()
+               .relation(Product, 'categories')
+               .of(result.raw[0])
+               .add(category)
+            const updatedProduct = await Product.findOne(id, { relations: ['categories'] })
+            return { product: updatedProduct }
          }
          return { errors: validationResponseMap(errors) }
       }
