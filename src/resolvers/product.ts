@@ -90,7 +90,10 @@ export class ProductResolver {
    ): Promise<ProductResponse> {
       const errors = await validate(input)
       if (errors.length === 0) {
-         const productId = (await Product.create({ ...input }).save()).id
+         const category = await Category.find({
+            where: { name: input.categories },
+         })
+         const productId = (await Product.create({ ...input, categories: category}).save()).id
          const product = await Product.findOne(productId, {
             relations: ['categories'],
          })
