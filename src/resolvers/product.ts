@@ -72,6 +72,9 @@ export class ProductResolver {
             name: ILike(`%${phrase}%`),
          },
          take: limit + 1,
+         order: {
+            id: 'ASC',
+         },
       })
       return {
          products: products.slice(0, realLimit),
@@ -126,7 +129,12 @@ export class ProductResolver {
             const result = await getConnection()
                .createQueryBuilder()
                .update(Product)
-               .set({ name: input.name, description: input.description, unitWeight: input.unitWeight, unitPrice: input.unitPrice})
+               .set({
+                  name: input.name,
+                  description: input.description,
+                  unitWeight: input.unitWeight,
+                  unitPrice: input.unitPrice,
+               })
                .where('id = :id', {
                   id,
                })
@@ -137,7 +145,9 @@ export class ProductResolver {
                .relation(Product, 'categories')
                .of(result.raw[0])
                .add(category)
-            const updatedProduct = await Product.findOne(id, { relations: ['categories'] })
+            const updatedProduct = await Product.findOne(id, {
+               relations: ['categories'],
+            })
             return { product: updatedProduct }
          }
          return { errors: validationResponseMap(errors) }

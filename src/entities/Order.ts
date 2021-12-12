@@ -27,6 +27,10 @@ export class Order extends BaseEntity {
    orderConfirmedDate: Date
 
    @Field()
+   @Column({ type: 'float' })
+   orderTotal: number
+
+   @Field()
    @Column()
    username!: string
 

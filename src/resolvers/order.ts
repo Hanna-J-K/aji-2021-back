@@ -19,8 +19,10 @@ import {
 } from 'class-validator'
 import { Order } from '../entities/Order'
 import { getConnection } from 'typeorm'
+import { DateUtils } from 'typeorm/util/DateUtils'
 import orderResponseMap from '../utils/validationResponseMap'
 import createOrderedProducts from '../utils/createOrderedProducts'
+import { Product } from '../entities/Product'
 
 @InputType()
 export class OrderedProductInput {
@@ -78,17 +80,23 @@ export class OrderResolver {
       const errors = await validate(input)
       console.log(errors)
       if (errors.length === 0) {
+         let orderTotal = 0
+         input.orderedProducts!.map(async (orderedProduct) => {
+            const product = await Product.findOne(orderedProduct.product_id)
+            orderTotal += orderedProduct.quantity * product!.unitPrice
+         })
          const status = await OrderStatus.findOne({
             where: { orderStatus: 'not confirmed' },
          })
-         const order = await Order.create({ ...input, status: status }).save()
-         await createOrderedProducts(
-            input.orderedProducts!, order.id
-         )
+         const order = await Order.create({
+            ...input,
+            orderTotal: orderTotal,
+            status: status,
+         }).save()
+         await createOrderedProducts(input.orderedProducts!, order.id)
          const orderWithProducts = await Order.findOne(order.id, {
             relations: ['status', 'orderedProducts'],
          })
-         console.log(orderWithProducts?.orderedProducts)
          return { order: orderWithProducts }
       }
       return { errors: orderResponseMap(errors) }
@@ -97,7 +105,9 @@ export class OrderResolver {
    @Query(() => [Order])
    async orders(): Promise<Order[]> {
       // WAZNE, ZEBY DODAC TE RELACJE!
-      const orders = await Order.find({ relations: ['status', 'orderedProducts'] })
+      const orders = await Order.find({
+         relations: ['status', 'orderedProducts'],
+      })
       return orders
    }
 
@@ -120,7 +130,10 @@ export class OrderResolver {
 
    @Query(() => Order, { nullable: true })
    order(@Arg('id', () => String) id: string): Promise<Order | undefined> {
-      return Order.findOne({ where: { id }, relations: ['status', 'orderedProducts'] })
+      return Order.findOne({
+         where: { id },
+         relations: ['status', 'orderedProducts'],
+      })
    }
 
    @Query(() => [OrderStatus])
@@ -186,14 +199,17 @@ export class OrderResolver {
             .of(order)
             .set(status)
          if (newStatus?.orderStatus === 'confirmed') {
-            const result = await getConnection()
+            await getConnection()
                .createQueryBuilder()
                .update(Order)
-               .set({ orderConfirmedDate: Date.now() })
+               .set({
+                  orderConfirmedDate: DateUtils.mixedDateToDate(
+                     new Date(Date.now()).toDateString()
+                  ),
+               })
                .where('id = :id', { id })
                .returning('*')
                .execute()
-            return { order: result.raw[0] }
          }
          const updatedOrder = await Order.findOne(id, { relations: ['status'] })
          return { order: updatedOrder }
